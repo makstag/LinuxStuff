@@ -4,11 +4,11 @@
 
 const size_t MEM_SIZE = sizeof(shared);
 
-int main(int argc, char ** argv)
+int main(int argc, char **argv)
 {
     int fd, error;
-    shared * addr;
-    static sem_t * sem;
+    shared *addr;
+    static sem_t *sem;
     const char MSG[] = "hello world";
 
     /* Create shared memory object and set its size */
@@ -28,16 +28,16 @@ int main(int argc, char ** argv)
     if (addr == MAP_FAILED)
         errExit("mmap");
 
-    error = msync(addr, MEM_SIZE, MS_ASYNC);
-    error = posix_fadvise(fd, 0, MEM_SIZE, POSIX_FADV_DONTNEED);
-    if (error == -1)
-        errExit("msync or posix_fadsive");
+    // error = msync(addr, MEM_SIZE, MS_ASYNC);
+    // error = posix_fadvise(fd, 0, MEM_SIZE, POSIX_FADV_DONTNEED);
+    // if (error == -1)
+    //     errExit("msync or posix_fadsive");
 
     error = close(fd);
     if (error == -1)
         errExit("close");
 
-    error = sem_init(sem, IPC, IPC);
+    error = sem_init(sem, IPC, 0);
     if (error == -1)
         errExit("sem_init");
 
@@ -48,17 +48,17 @@ int main(int argc, char ** argv)
 
     for (int i = 0; i < 10; i++)
     {
-        sem_wait(sem);
+        sem_post(sem);
         printf("IPC1= %d\n", addr->val);
         memcpy(&(addr->val), &i, sizeof i);
-        
+
         sleep(1);
-        sem_post(sem);
+        sem_wait(sem);
     }
 
-    error = munmap(addr, MEM_SIZE);
-    if (error == -1)
-        errExit("munmap");
+    // error = munmap(addr, MEM_SIZE);
+    // if (error == -1)
+    //     errExit("munmap");
 
     exit(EXIT_SUCCESS);
 }
