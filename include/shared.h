@@ -23,7 +23,7 @@ typedef struct SHARED
     int val;
     char msg[LENGTH];
 
-    static sem_t sem;
+    sem_t sem;
 } shared;
 
 #endif // SHARED_H_

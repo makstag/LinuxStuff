@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 
     /* Map shared memory object */
 
-    addr = mmap(NULL, sb.st_size, PROT_NONE, MAP_SHARED, fd, 0);
+    addr = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
     sem = &(addr->sem);
     if (addr == MAP_FAILED)
         errExit("mmap");
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 
     printf("sem= %d\n", value);
 
-    error = mprotect(addr, sb.st_size, PROT_READ | PROT_WRITE);
+    error = mprotect(addr, sb.st_size, PROT_WRITE);
     if (error == -1)
         errExit("mprotect");
 
@@ -50,8 +50,9 @@ int main(int argc, char **argv)
     for (int i = 0; i < 10; i++)
     {
         sem_post(sem);
-        printf("IPC2= %d\n", addr->val);
+
         addr->val *= 2;
+        printf("IPC2= %d\n", addr->val);
 
         sleep(1);
         sem_wait(sem);

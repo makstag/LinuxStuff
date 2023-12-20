@@ -49,16 +49,17 @@ int main(int argc, char **argv)
     for (int i = 0; i < 10; i++)
     {
         sem_post(sem);
-        printf("IPC1= %d\n", addr->val);
+
         memcpy(&(addr->val), &i, sizeof i);
+        printf("IPC1= %d\n", addr->val);
 
         sleep(1);
         sem_wait(sem);
     }
 
-    // error = munmap(addr, MEM_SIZE);
-    // if (error == -1)
-    //     errExit("munmap");
+    error = munmap(addr, MEM_SIZE);
+    if (error == -1)
+        errExit("munmap");
 
     exit(EXIT_SUCCESS);
 }

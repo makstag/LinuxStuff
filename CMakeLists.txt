@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.27.6)
 project(ipc LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
