@@ -4,7 +4,7 @@
 
 const size_t MEM_SIZE = sizeof(shared);
 
-int main(int argc, char **argv)
+int main(void)
 {
     int fd, error;
     shared *addr;
