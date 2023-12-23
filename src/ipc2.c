@@ -24,10 +24,10 @@ int main(void)
     if (addr == MAP_FAILED)
         errExit("mmap");
 
-    // error = msync(addr, sb.st_size, MS_ASYNC);
-    // error = posix_fadvise(fd, 0, sb.st_size, POSIX_FADV_DONTNEED);
-    // if (error == -1)
-    //     errExit("msync or posix_fadsive");
+    /*error = msync(addr, sb.st_size, MS_ASYNC);
+    error = posix_fadvise(fd, 0, sb.st_size, POSIX_FADV_DONTNEED);
+    if (error == -1)
+        errExit("msync or posix_fadsive");*/
 
     error = close(fd);
     if (error == -1)
@@ -46,17 +46,22 @@ int main(void)
     if (strlen(MSG) < LENGTH)
         strncpy(addr->msg, MSG, LENGTH - 1);
     printf("IPC2= %s\n", addr->msg);
-
-    for (int i = 0; i < 10; i++)
+    /*sem_wait(sem);*/
+    //for (int i = 0; i < 10; i++)
+    while(value > 0)
     {
-        sem_post(sem);
+        /*sem_post(sem);*/
 
         addr->val *= 2;
         printf("IPC2= %d\n", addr->val);
 
         sleep(1);
-        sem_wait(sem);
+        /*sem_wait(sem);*/
+        error = sem_getvalue(sem, &value);
+        if (error == -1)
+            errExit("sem_getvalue");
     }
+    /*sem_post(sem);*/
 
     sem_destroy(sem);
     error = munmap(addr, sb.st_size);
