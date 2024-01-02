@@ -24,18 +24,18 @@ set_target_properties(tlpidist PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_SOURCE_DIR}/tlpi-dist/lib"
 )
 
-add_executable(${PROJECT_NAME}1 src/ipc1.c)
-target_link_libraries(${PROJECT_NAME}1 ${SYSTEM_LIBS} tlpidist)
+add_executable(server src/server.c)
+target_link_libraries(server ${SYSTEM_LIBS} tlpidist)
 
-target_include_directories(${PROJECT_NAME}1 PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
+#target_include_directories(server PUBLIC
+#  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#  $<INSTALL_INTERFACE:include>
+#)
 
-add_executable(${PROJECT_NAME}2 src/ipc2.c)
-target_link_libraries(${PROJECT_NAME}2 ${SYSTEM_LIBS} tlpidist)
+add_executable(client src/client.c)
+target_link_libraries(client ${SYSTEM_LIBS} tlpidist)
 
-target_include_directories(${PROJECT_NAME}2 PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
+#target_include_directories(client PUBLIC
+#  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#  $<INSTALL_INTERFACE:include>
+#)

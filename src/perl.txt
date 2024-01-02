@@ -1,0 +1,87 @@
+#!/usr/bin/perl
+# sysvsem/evtpost -- post process evtdump files
+
+master(@ARGV);
+exit(0);
+
+# master -- master control
+sub master
+{
+    my(@argv) = @_;
+
+    $xfile = shift(@argv);
+    $xfile //= "sysvsem";
+
+    @tails = dirload(".");
+    foreach $tail (@tails) {
+        next unless ($tail =~ /^evtdump/);
+        open($xfsrc,"<$tail");
+
+        while ($bf = <$xfsrc>) {
+            chomp($bf);
+            push(@evt,$bf);
+        }
+
+        close($xfsrc);
+    }
+
+    @evt = sort(evtsort @evt);
+
+    foreach $evt (@evt) {
+        print($evt,"\n");
+    }
+}
+
+sub evtsort
+{
+    my($lhs,$rhs);
+    my($cmpflg);
+
+    $lhs = _evtsort($a);
+    $rhs = _evtsort($b);
+
+    $cmpflg = $lhs <=> $rhs;
+
+    $cmpflg;
+}
+
+sub _evtsort
+{
+    my($bf) = @_;
+    my($av);
+    my($val);
+
+    ($av) = split(" ",$bf);
+
+    if ($av =~ s/^\[//) {
+        $av =~ s/\]$//;
+        ($val) = split("/",$av);
+    }
+
+    sysfault("_evtsort: bf='%s'\n",$bf)
+        unless (defined($val));
+
+    $val;
+}
+
+sub dirload
+{
+    my($dir) = @_;
+    my($xfdir);
+    my($tail);
+    my(@tails);
+
+    opendir($xfdir,$dir);
+
+    while ($tail = readdir($xfdir)) {
+        next if ($tail eq ".");
+        next if ($tail eq "..");
+        push(@tails,$tail);
+    }
+
+    closedir($xfdir);
+
+    @tails = sort(@tails);
+
+    @tails;
+}

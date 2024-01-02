@@ -1,0 +1,422 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+#include <sys/sem.h>
+#include <stdatomic.h>
+#include <errno.h>
+#include <sys/file.h>
+
+#define NUMBER_OF_CARS 10
+#define MIN 25                          // time generator
+#define MAX 40
+
+#define MAXSEM      2                   // number of semaphores
+
+typedef struct {
+    unsigned int totalTime;
+} car;
+
+car *shared_memory;
+
+int drive(void);
+unsigned int generateNumber(void);
+void display(void);
+
+int carno;                              // current car number
+int sem_id;                             // semaphore set ID
+int acqrel;                             // acquire/release sequence number
+
+typedef long long s64;
+typedef s64 tsc_t;
+
+tsc_t tsczero;
+
+// tracing event
+typedef struct {
+    tsc_t evt_tsc;                      // event time
+    const char *evt_name;               // event name
+    int evt_carno;                      // car number
+    s64 evt_val;                        // event value
+} evt_t, *evt_p;
+
+#define EVTMAX      10000
+evt_t evtlist[EVTMAX];
+int evtidx_enq;                         // enqueue index
+int evtidx_deq;                         // dequeue index
+FILE *evtxf;                            // evtdump stream
+
+#if EVT
+#define evtenq(_name,_val) \
+    _evtenq(_name,_val)
+#else
+#define evtenq(_name,_val) \
+    do { } while (0)
+#endif
+
+#define sysfault(_fmt...) \
+    do { \
+        fprintf(stderr,"%2.2d ",carno); \
+        fprintf(stderr,_fmt); \
+        exit(1); \
+    } while (0)
+
+// tscget -- get hires timestamp
+tsc_t
+tscget(void)
+{
+    struct timespec ts;
+    tsc_t tsc;
+
+    clock_gettime(CLOCK_MONOTONIC,&ts);
+
+    tsc = ts.tv_sec;
+    tsc *= 1000000000;
+    tsc += ts.tv_nsec;
+
+    tsc -= tsczero;
+
+    return tsc;
+}
+
+// tscsec -- convert timestamp to fractional seconds
+double
+tscsec(tsc_t tsc)
+{
+    double sec;
+
+    sec = tsc;
+    sec /= 1e9;
+
+    return sec;
+}
+
+// evtinc -- increment queue index with wrap
+int
+evtinc(int idx)
+{
+
+    idx += 1;
+    idx %= EVTMAX;
+
+    return idx;
+}
+
+// _evtenq -- enqueue trace event
+evt_p
+_evtenq(const char *name,s64 val)
+{
+    int enqcur = evtidx_enq;
+    int enqnext = evtinc(enqcur);
+    evt_p evt;
+
+    // pop element off queue to make room if queue is full
+    if (enqnext == evtidx_deq)
+        evtidx_deq = evtinc(evtidx_deq);
+
+    evt = &evtlist[enqcur];
+    evtidx_enq = enqnext;
+
+    evt->evt_tsc = tscget();
+
+    evt->evt_name = name;
+    evt->evt_carno = carno;
+
+    evt->evt_val = val;
+
+    return evt;
+}
+
+// evtdeq -- dequeue trace event
+evt_p
+evtdeq(void)
+{
+    evt_p evt;
+
+    do {
+        // bug out on empty queue
+        if (evtidx_deq == evtidx_enq) {
+            evt = NULL;
+            break;
+        }
+
+        evt = &evtlist[evtidx_deq];
+        evtidx_deq = evtinc(evtidx_deq);
+    } while (0);
+
+    return evt;
+}
+
+// evtdump -- dump out trace queue
+void
+evtdump(void)
+{
+    FILE *xf;
+    int openflg;
+    char file [100];
+    evt_p evt;
+
+    xf = evtxf;
+    openflg = (xf == NULL);
+    if (openflg) {
+        sprintf(file,"evtdump_%2.2d",carno);
+        xf = fopen(file,"w");
+    }
+
+    flock(fileno(xf),LOCK_EX);
+
+    while (1) {
+        evt = evtdeq();
+        if (evt == NULL)
+            break;
+
+        fprintf(xf,"[%.9f/%2.2d] %s %lld\n",
+            tscsec(evt->evt_tsc),evt->evt_carno,evt->evt_name,evt->evt_val);
+    }
+
+    fflush(xf);
+    flock(fileno(xf),LOCK_UN);
+
+    if (openflg)
+        fclose(xf);
+}
+
+// init -- initialize semaphore set
+void
+init(void)
+{
+    int err;
+    int val;
+
+    sem_id = semget(IPC_PRIVATE, MAXSEM, 0666 | IPC_CREAT);
+    if (sem_id == -1) {
+        perror("shmget() failed !");
+        exit(EXIT_FAILURE);
+    }
+
+    for (int semnum = 0;  semnum < MAXSEM;  ++semnum) {
+        // get the old value
+        err = semctl(sem_id,semnum,GETVAL,NULL);
+        printf("init: semnum=%d err=%d\n",semnum,err);
+
+        // set initial value (otherwise, we will hang in acquire)
+        val = 1;
+        err = semctl(sem_id,semnum,SETVAL,val);
+
+        // show the new value
+        err = semctl(sem_id,semnum,GETVAL,NULL);
+        printf("init: semnum=%d err=%d\n",semnum,err);
+    }
+}
+
+// acquire -- acquire the semaphore
+void
+acquire(int semnum)
+{
+    struct sembuf sop;
+    int err;
+
+    ++acqrel;
+
+    sop.sem_num = semnum;
+    sop.sem_op = -1;
+    sop.sem_flg = 0;
+
+    evtenq("acquire/BEG",acqrel);
+    err = semop(sem_id,&sop,1);
+    if (err < 0)
+        err = errno;
+    evtenq("acquire/END",acqrel);
+
+    if (err)
+        sysfault("acquire: fault semnum=%d -- %s\n",semnum,strerror(err));
+}
+
+// release -- release the semaphore
+void
+release(int semnum)
+{
+    struct sembuf sop;
+    int err;
+
+    sop.sem_num = semnum;
+    sop.sem_op = 1;
+    sop.sem_flg = 0;
+
+    evtenq("release/BEG",acqrel);
+    err = semop(sem_id,&sop,1);
+    if (err < 0)
+        err = errno;
+    evtenq("release/END",acqrel);
+
+    if (err)
+        sysfault("acquire: fault semnum=%d -- %s\n",semnum,strerror(err));
+}
+
+void
+sighdr(int signo)
+{
+
+    evtdump();
+    exit(9);
+}
+
+int
+main(void)
+{
+
+    setlinebuf(stdout);
+    setlinebuf(stderr);
+
+    tsc_t tsc = tscget();
+#if 0
+    srand(tsc);
+#endif
+    tsczero = tsc;
+
+    signal(SIGINT,sighdr);
+
+    init();
+
+#if 0
+    evtxf = fopen("evtdump","w");
+#endif
+
+    // Creating shared memory
+    int segment_id = shmget(IPC_PRIVATE, sizeof(car) * NUMBER_OF_CARS,
+        0666 | IPC_CREAT);
+
+    if (segment_id == -1) {
+        perror("shmget() failed !");
+        exit(EXIT_FAILURE);
+    }
+
+    shared_memory = shmat(segment_id, NULL, 0);
+    if (shared_memory == (void *) (-1)) {
+        perror("shmat() failed !");
+        exit(EXIT_FAILURE);
+    }
+
+    /**********************************************************
+     *               Creation of child / cars              *
+     **********************************************************/
+    for (carno = 0; carno < NUMBER_OF_CARS; ++carno) {
+        /********  échec du fork *********/
+        pid_t pid = fork();
+
+        if (pid == -1) {
+            perror("fork failed !");
+            exit(EXIT_FAILURE);
+        }
+
+        /********  le fils *********/
+        if (pid == 0) {
+            drive();
+            exit(EXIT_SUCCESS);
+        }
+
+#if 0
+        wait(NULL);
+        display();
+        sleep(1);
+#endif
+    }
+
+#if 1
+    while (wait(NULL) >= 0);
+    display();
+#endif
+
+    /********  Detach memory segments  *********/
+    shmdt(shared_memory);
+    /********  Delete shared memory  *********/
+    shmctl(segment_id, IPC_RMID, NULL);
+
+    // delete semaphores
+    for (int semno = 0;  semno < MAXSEM;  ++semno)
+        semctl(sem_id, semno, IPC_RMID);
+
+    if (evtxf != NULL)
+        fclose(evtxf);
+
+    exit(EXIT_SUCCESS);
+}
+
+unsigned int timeMaxi = 5400;
+
+int
+drive(void)
+{
+#if 1
+    srand(tscget() + tsczero + getpid());
+#endif
+
+    unsigned int number;
+
+    for (int idx = 0;  idx <= 10;  ++idx)
+        evtenq("drive/TEST",idx);
+
+    car *car = &shared_memory[carno];
+
+    // I want it to be executed by all processes at the same time!
+
+    // non-synced version
+#if 0
+    while (car->totalTime <= timeMaxi) {
+        number = generateNumber();
+        car->totalTime += number;
+    }
+#endif
+
+    // atomic primitive version
+#if 0
+    while (1) {
+        number = generateNumber();
+        number += atomic_fetch_add(&car->totalTime,number);
+        if (number > timeMaxi)
+            break;
+    }
+#endif
+
+    // acquire/release semaphore version
+#if 1
+    while (1) {
+        acquire(0);
+
+        if (car->totalTime > timeMaxi) {
+            release(0);
+            break;
+        }
+
+        number = generateNumber();
+        car->totalTime += number;
+
+        release(0);
+    }
+#endif
+
+    evtdump();
+    exit(0);
+
+    return 0;
+}
+
+void
+display(void)
+{
+    for (int i = 0; i < NUMBER_OF_CARS; i++) {
+        printf("Total %d : %d\n", i, shared_memory[i].totalTime);
+    }
+}
+
+unsigned int
+generateNumber(void)
+{
+    return rand() % (MAX - MIN + 1) + MIN;
+}
