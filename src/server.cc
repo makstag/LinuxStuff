@@ -3,7 +3,7 @@
 int main(void)
 {
     struct sockaddr_un svaddr, claddr;
-    int sfd, j;
+    int sfd;
     ssize_t numBytes;
     socklen_t len;
     char buf[BUF_SIZE];
@@ -18,10 +18,13 @@ int main(void)
        page 1168 at http://www.man7.org/tlpi/errata/. */
 
     if (strlen(SOCK_PATH) > sizeof(svaddr.sun_path) - 1)
-        fatal("Server socket path too long: %s", SOCK_PATH);
+    {
+        printf("Server socket path too long: %s", SOCK_PATH);
+        exit(EXIT_FAILURE);
+    }
 
     if (remove(SOCK_PATH) == -1 && errno != ENOENT)
-        perror("remove-%s", SOCK_PATH);
+        perror("remove-/tmp/saddr");
 
     memset(&svaddr, 0, sizeof(struct sockaddr_un));
     svaddr.sun_family = AF_UNIX;
@@ -42,11 +45,11 @@ int main(void)
         printf("Server received %ld bytes from %s\n", (long) numBytes,
                 claddr.sun_path);
 
-        for (j = 0; j < numBytes; j++)
-            buf[j] = toupper((unsigned char) buf[j]);
+//        for (j = 0; j < numBytes; j++)
+//            buf[j] = toupper((unsigned char) buf[j]);
 
-        if (sendto(sfd, buf, numBytes, 0, (struct sockaddr *) &claddr, len) !=
-                numBytes)
-            fatal("sendto");
+//        if (sendto(sfd, buf, numBytes, 0, (struct sockaddr *) &claddr, len) !=
+//                numBytes)
+//            fatal("sendto");
     }
 }

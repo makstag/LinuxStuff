@@ -3,9 +3,7 @@
 int main(void)
 {
     struct sockaddr_un svaddr, claddr;
-    int sfd, j;
-    size_t msgLen;
-    ssize_t numBytes;
+    int sfd;
     char resp[BUF_SIZE];
 
     /* Create client socket; bind to unique pathname (based on PID) */
@@ -20,7 +18,7 @@ int main(void)
             "/tmp/saddr.%ld", (long) getpid());
 
     if (bind(sfd, (struct sockaddr *) &claddr, sizeof(struct sockaddr_un)) == -1)
-        errExit("bind");
+        perror("bind");
 
     /* Construct address of server */
 
@@ -30,19 +28,21 @@ int main(void)
 
     /* Send messages to server; echo responses on stdout */
 
-    for (j = 1; j < argc; j++) {
-        msgLen = strlen(argv[j]);       /* May be longer than BUF_SIZE */
-        if (sendto(sfd, argv[j], msgLen, 0, (struct sockaddr *) &svaddr,
-                sizeof(struct sockaddr_un)) != msgLen)
-            fatal("sendto");
-
-        numBytes = recvfrom(sfd, resp, BUF_SIZE, 0, NULL, NULL);
-        /* Or equivalently: numBytes = recv(sfd, resp, BUF_SIZE, 0);
-                        or: numBytes = read(sfd, resp, BUF_SIZE); */
-        if (numBytes == -1)
-            perror("recvfrom");
-        printf("Response %d: %.*s\n", j, (int) numBytes, resp);
+    /* May be longer than BUF_SIZE */
+    memset(resp, '0', BUF_SIZE);
+    if (sendto(sfd, resp, BUF_SIZE, 0, (struct sockaddr *) &svaddr,
+            sizeof(struct sockaddr_un)) != BUF_SIZE)
+    {
+        printf("sendto");
+        exit(EXIT_FAILURE);
     }
+
+//    numBytes = recvfrom(sfd, resp, BUF_SIZE, 0, NULL, NULL);
+    /* Or equivalently: numBytes = recv(sfd, resp, BUF_SIZE, 0);
+            or: numBytes = read(sfd, resp, BUF_SIZE); */
+//    if (numBytes == -1)
+//        perror("recvfrom");
+//    printf("Response %d: %.*s\n", j, (int) numBytes, resp);
 
     remove(claddr.sun_path);            /* Remove client socket pathname */
     exit(EXIT_SUCCESS);
