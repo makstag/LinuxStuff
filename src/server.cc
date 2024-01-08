@@ -32,13 +32,19 @@ int main(void)
 
     if (bind(sfd, (struct sockaddr *) &svaddr, sizeof(struct sockaddr_un)) == -1)
         perror("bind");
-
+    
     /* Receive messages, convert to uppercase, and return to client */
 
     for (;;) {
         len = sizeof(struct sockaddr_un);
+        const auto start_time = Clock::now();
+
         numBytes = recvfrom(sfd, buf, BUF_SIZE, 0,
                             (struct sockaddr *) &claddr, &len);
+        const auto end_time = Clock::now();
+        const auto dur = end_time - start_time;
+
+        std::cout << "receive = " << duration_cast<milliseconds>(dur).count() << " ms\n";
         if (numBytes == -1)
             perror("recvfrom");
 
