@@ -1,0 +1,4 @@
+/mnt/d/ubuntuprog/posix_ipc/build/CMakeFiles/server.dir
+/mnt/d/ubuntuprog/posix_ipc/build/CMakeFiles/client.dir
+/mnt/d/ubuntuprog/posix_ipc/build/CMakeFiles/edit_cache.dir
+/mnt/d/ubuntuprog/posix_ipc/build/CMakeFiles/rebuild_cache.dir

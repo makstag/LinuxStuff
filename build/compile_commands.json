@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/mnt/d/ubuntuprog/posix_ipc/build",
+  "command": "/usr/bin/c++  -I/mnt/d/ubuntuprog/posix_ipc/include -isystem /mnt/d/ubuntuprog/posix_ipc/tlpi-dist/lib -O2 -g -DNDEBUG -std=gnu++20 -Wall -Wextra -Wpedantic -o CMakeFiles/server.dir/src/server.cc.o -c /mnt/d/ubuntuprog/posix_ipc/src/server.cc",
+  "file": "/mnt/d/ubuntuprog/posix_ipc/src/server.cc",
+  "output": "CMakeFiles/server.dir/src/server.cc.o"
+},
+{
+  "directory": "/mnt/d/ubuntuprog/posix_ipc/build",
+  "command": "/usr/bin/c++  -I/mnt/d/ubuntuprog/posix_ipc/include -isystem /mnt/d/ubuntuprog/posix_ipc/tlpi-dist/lib -O2 -g -DNDEBUG -std=gnu++20 -Wall -Wextra -Wpedantic -o CMakeFiles/client.dir/src/client.cc.o -c /mnt/d/ubuntuprog/posix_ipc/src/client.cc",
+  "file": "/mnt/d/ubuntuprog/posix_ipc/src/client.cc",
+  "output": "CMakeFiles/client.dir/src/client.cc.o"
+}
+]

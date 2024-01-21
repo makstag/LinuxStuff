@@ -6,10 +6,16 @@
 #include <unistd.h>
 #include <iostream>
 #include <chrono>
+#include <limits.h>
 
-// #define BUF_SIZE 1073741824
-#define BUF_SIZE 1000
+#define BUF_SIZE 1073741824
+/* #define BUF_SIZE 1000 */
 #define SOCK_PATH "/tmp/saddr"
+#define LEN 1024
+
+#define _GNU_SOURCE
+#define _POSIX_C_SOURCE 199309
+#include <signal.h>
 
 using Clock = std::chrono::steady_clock;
 using namespace std::chrono;
