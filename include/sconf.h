@@ -8,8 +8,8 @@
 #include <chrono>
 #include <limits.h>
 
-#define BUF_SIZE 1073741824
-/* #define BUF_SIZE 1000 */
+
+#define BUF_SIZE 210000
 #define SOCK_PATH "/tmp/saddr"
 #define LEN 1024
 

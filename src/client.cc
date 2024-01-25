@@ -21,13 +21,13 @@ int main(void)
     if (sfd == -1)
         perror("socket");
 
-    memset(&claddr, 0, sizeof(struct sockaddr_un));
-    claddr.sun_family = AF_UNIX;
-    snprintf(claddr.sun_path, sizeof(claddr.sun_path),
-            "/tmp/saddr.%ld", (long) getpid());
+//    memset(&claddr, 0, sizeof(struct sockaddr_un));
+//    claddr.sun_family = AF_UNIX;
+//    snprintf(claddr.sun_path, sizeof(claddr.sun_path),
+//            "/tmp/saddr.%ld", (long) getpid());
 
-    if (bind(sfd, (struct sockaddr *) &claddr, sizeof(struct sockaddr_un)) == -1)
-        perror("bind");
+//    if (bind(sfd, (struct sockaddr *) &claddr, sizeof(struct sockaddr_un)) == -1)
+//        perror("bind");
 
     /* Construct address of server */
 
@@ -39,15 +39,17 @@ int main(void)
 
     /* May be longer than BUF_SIZE */
     memset(resp, '0', BUF_SIZE);
-    resp[0] = 'h';
-    resp[1] = 'e';
-    resp[2] = 'l';
-    resp[3] = 'l';
-    resp[4] = 'o';
+//    resp[0] = 'h';
+//    resp[1] = 'e';
+//    resp[2] = 'l';
+//    resp[3] = 'l';
+//    resp[4] = 'o';
 
     const auto start_time = Clock::now();
-    if (sendto(sfd, resp, BUF_SIZE, 0, (struct sockaddr *) &svaddr,
-            sizeof(struct sockaddr_un)) != BUF_SIZE)
+    ssize_t senBuf = sendto(sfd, resp, BUF_SIZE, 0, (struct sockaddr *) & svaddr, sizeof(struct sockaddr_un));
+//    std::cout << "memory initialize = " << MSG_SIZE << std::endl;
+
+    if (errno == EMSGSIZE)
     {
         printf("sendto");
         exit(EXIT_FAILURE);
