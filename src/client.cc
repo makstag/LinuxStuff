@@ -46,10 +46,10 @@ int main(void)
 //    resp[4] = 'o';
 
     const auto start_time = Clock::now();
-    ssize_t senBuf = sendto(sfd, resp, BUF_SIZE, 0, (struct sockaddr *) & svaddr, sizeof(struct sockaddr_un));
-//    std::cout << "memory initialize = " << MSG_SIZE << std::endl;
+    ssize_t sendBuf = sendto(sfd, resp, BUF_SIZE, 0, (struct sockaddr *) & svaddr, sizeof(struct sockaddr_un));
+    std::cout << "send size = " << sendBuf << std::endl;
 
-    if (errno == EMSGSIZE)
+    if (sendBuf != BUF_SIZE)
     {
         printf("sendto");
         exit(EXIT_FAILURE);

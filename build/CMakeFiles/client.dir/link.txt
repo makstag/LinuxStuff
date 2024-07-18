@@ -1,1 +1,0 @@
-/usr/bin/c++ -O2 -g -DNDEBUG CMakeFiles/client.dir/src/client.cc.o -o client  /mnt/d/ubuntuprog/posix_ipc/tlpi-dist/libtlpi.a 
