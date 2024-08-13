@@ -91,12 +91,11 @@
 
 #include <stdint.h>
 
-typedef uint16_t 	multiboot_uint16_t;
-typedef uint32_t		multiboot_uint32_t;
-typedef uint64_t		multiboot_uint64_t;
+typedef uint16_t	multiboot_uint16_t;
+typedef uint32_t	multiboot_uint32_t;
+typedef uint64_t	multiboot_uint64_t;
 
-typedef struct multiboot_header 
-{
+struct multiboot_header {
 	/* Must be MULTIBOOT_MAGIC - see above. */
 	multiboot_uint32_t magic;
 
@@ -118,28 +117,29 @@ typedef struct multiboot_header
 	multiboot_uint32_t width;
 	multiboot_uint32_t height;
 	multiboot_uint32_t depth;
-} multiboot_header_t;
+};
 
 /* The symbol table for a.out. */
-typedef struct multiboot_aout_symbol_table 
-{
+struct multiboot_aout_symbol_table {
 	multiboot_uint32_t tabsize;
 	multiboot_uint32_t strsize;
 	multiboot_uint32_t addr;
 	multiboot_uint32_t reserved;
-} multiboot_aout_symbol_table_t;
+};
+
+typedef struct multiboot_aout_symbol_table multiboot_aout_symbol_table_t;
 
 /* The section header table for ELF. */
-typedef struct multiboot_elf_section_header_table 
-{
+struct multiboot_elf_section_header_table {
 	multiboot_uint32_t num;
 	multiboot_uint32_t size;
 	multiboot_uint32_t addr;
 	multiboot_uint32_t shndx;
-} multiboot_elf_section_header_table_t;
+};
+
+typedef struct multiboot_elf_section_header_table multiboot_elf_section_header_table_t;
      
-typedef struct multiboot_info 
-{
+struct multiboot_info {
 	/* Multiboot info version number */
 	multiboot_uint32_t flags;
 
@@ -157,8 +157,7 @@ typedef struct multiboot_info
 	multiboot_uint32_t mods_count;
 	multiboot_uint32_t mods_addr;
 
-	union 
-	{
+	union {
 		multiboot_aout_symbol_table_t aout_sym;
 		multiboot_elf_section_header_table_t elf_sec;
 	} u;
@@ -187,22 +186,22 @@ typedef struct multiboot_info
 	multiboot_uint16_t vbe_interface_seg;
 	multiboot_uint16_t vbe_interface_off;
 	multiboot_uint16_t vbe_interface_len;
-}  multiboot_info_t;
+};
 
-struct multiboot_mmap_entry 
-{
+typedef struct multiboot_info multiboot_info_t;
+
+struct multiboot_mmap_entry {
 	multiboot_uint32_t size;
 	multiboot_uint64_t addr;
 	multiboot_uint64_t len;
-#define MULTIBOOT_MEMORY_AVAILABLE	1
-#define MULTIBOOT_MEMORY_RESERVED	2
+	#define MULTIBOOT_MEMORY_AVAILABLE	1
+	#define MULTIBOOT_MEMORY_RESERVED	2
 	multiboot_uint32_t type;
 } __attribute__((packed));
 
 typedef struct multiboot_mmap_entry multiboot_memory_map_t;
 
-typedef struct multiboot_mod_list 
-{
+struct multiboot_mod_list {
 	/**
 	 * the memory used goes from bytes 'mod_start' to 'mod_end-1'
 	 * inclusive
@@ -215,7 +214,9 @@ typedef struct multiboot_mod_list
 
 	/* padding to take it to 16 bytes (must be zero) */
 	multiboot_uint32_t pad;
-} multiboot_module_t;
+};
+
+typedef struct multiboot_mod_list multiboot_module_t;
 
 #endif /* __ASM_FILE__ */
 
