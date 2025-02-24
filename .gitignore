@@ -11,6 +11,9 @@
 *.ilk
 *.map
 *.exp
+*.bin
+*.log
+*.pcap
 
 # Precompiled Headers
 *.gch
@@ -41,6 +44,7 @@
 *.su
 *.idb
 *.pdb
+*.tar
 
 # Kernel Module Compile Results
 *.mod*
@@ -50,3 +54,6 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+/disk/*
+!/disk/.gitkeep

@@ -19,7 +19,7 @@ kernel: $(OBJ) link.ld
 	ld $(LFLAGS) -T link.ld -o $@ $(OBJ)
 
 $(SOBJECTS): %.o: %.s
-	cc nasm -D__ASM_FILE__ -I$(INC) -g -c $< -o $@
+	cc -D__ASM_FILE__ -I$(INC) -g -c $< -o $@
 
 $(COBJECTS): %.o: %.c
 	cc $(CFLAGS) -I$(INC) -g -c $< -o $@
