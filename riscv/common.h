@@ -1,8 +1,6 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-#include "kernel.h"
-
 typedef int bool;
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
@@ -22,6 +20,47 @@ typedef uint32_t vaddr_t;
 #define va_start __builtin_va_start
 #define va_end __builtin_va_end
 #define va_arg __builtin_va_arg
+
+struct sbiret
+{
+    long error;
+    long value;
+};
+
+struct trap_frame 
+{
+    uint32_t ra;
+    uint32_t gp;
+    uint32_t tp;
+    uint32_t t0;
+    uint32_t t1;
+    uint32_t t2;
+    uint32_t t3;
+    uint32_t t4;
+    uint32_t t5;
+    uint32_t t6;
+    uint32_t a0;
+    uint32_t a1;
+    uint32_t a2;
+    uint32_t a3;
+    uint32_t a4;
+    uint32_t a5;
+    uint32_t a6;
+    uint32_t a7;
+    uint32_t s0;
+    uint32_t s1;
+    uint32_t s2;
+    uint32_t s3;
+    uint32_t s4;
+    uint32_t s5;
+    uint32_t s6;
+    uint32_t s7;
+    uint32_t s8;
+    uint32_t s9;
+    uint32_t s10;
+    uint32_t s11;
+    uint32_t sp;
+} __attribute__((packed));
 
 void* memset(void* buf, char c, size_t n);
 void* memcpy(void* dst, const void* src, size_t n);

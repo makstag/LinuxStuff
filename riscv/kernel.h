@@ -1,6 +1,8 @@
 #ifndef __KERNEL_H__
 #define __KERNEL_H__
 
+#include "common.h"
+
 #define PANIC(fmt, ...)                                                                                                \
     do                                                                                                                 \
     {                                                                                                                  \
@@ -9,10 +11,18 @@
             ;                                                                                                          \
     } while (0)
 
-struct sbiret
-{
-    long error;
-    long value;
-};
+#define READ_CSR(reg)                                                                                                  \
+    ({                                                                                                                 \
+        unsigned long __tmp;                                                                                           \
+        __asm__ __volatile__("csrr %0, " #reg : "=r"(__tmp));                                                          \
+        __tmp;                                                                                                         \
+    })
+
+#define WRITE_CSR(reg, value)                                                                                          \
+    do                                                                                                                 \
+    {                                                                                                                  \
+        uint32_t __tmp = (value);                                                                                      \
+        __asm__ __volatile__("csrw " #reg ", %0" ::"r"(__tmp));                                                        \
+    } while (0)
 
 #endif /* __KERNEL_H__ */
