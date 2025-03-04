@@ -69,4 +69,7 @@ char* strcpy(char* dst, const char* src);
 int strcmp(const char* s1, const char* s2);
 void printf(const char* fmt, ...);
 
+struct sbiret sbi_call(long arg0, long arg1, long arg2, long arg3, long arg4, long arg5, long fid, long eid);
+void putchar(char ch);
+
 #endif /* __COMMON_H__ */

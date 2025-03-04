@@ -1,19 +1,121 @@
 #include "kernel.h"
+#include "process_control_block.h"
 
 extern char __bss[], __bss_end[], __stack_top[];
 extern char __free_ram[], __free_ram_end[];
 
-paddr_t alloc_pages(uint32_t n)
+struct process procs[PROCS_MAX]; // Все блоки управления процессами.
+struct process* proc_a;
+struct process* proc_b;
+
+struct process* create_process(uint32_t pc)
 {
-    static paddr_t next_paddr = (paddr_t)__free_ram;
-    paddr_t paddr = next_paddr;
-    next_paddr += n * PAGE_SIZE;
+    // Поиск блока управления неиспользуемого процесса.
+    struct process* proc = NULL;
+    int i;
+    for (i = 0; i < PROCS_MAX; i++)
+    {
+        if (procs[i].state == PROC_UNUSED)
+        {
+            proc = &procs[i];
+            break;
+        }
+    }
 
-    if (next_paddr > (paddr_t)__free_ram_end)
-        PANIC("out of memory");
+    if (!proc)
+        PANIC("no free process slots");
 
-    memset((void*)paddr, 0, n * PAGE_SIZE);
-    return paddr;
+    // Запись в стек значений регистров, сохранённых вызываемым кодом. Эти значения будут восстановлены при первом
+    // переключении контекста функцией switch_context.
+    uint32_t* sp = (uint32_t*)&proc->stack[sizeof(proc->stack)];
+    *--sp = 0;            // s11
+    *--sp = 0;            // s10
+    *--sp = 0;            // s9
+    *--sp = 0;            // s8
+    *--sp = 0;            // s7
+    *--sp = 0;            // s6
+    *--sp = 0;            // s5
+    *--sp = 0;            // s4
+    *--sp = 0;            // s3
+    *--sp = 0;            // s2
+    *--sp = 0;            // s1
+    *--sp = 0;            // s0
+    *--sp = (uint32_t)pc; // ra
+
+    // Инициализация полей.
+    proc->pid = i + 1;
+    proc->state = PROC_RUNNABLE;
+    proc->sp = (uint32_t)sp;
+    return proc;
+}
+
+__attribute__((naked)) void switch_context(uint32_t* prev_sp, uint32_t* next_sp)
+{
+    __asm__ __volatile__(
+        // Запись сохранённых вызываемым кодом значений регистров в стек текущего процесса.
+        "addi sp, sp, -13 * 4\n" // Аллокация пространства стека для 13 4-байтовых регистров.
+        "sw ra,  0  * 4(sp)\n"   // Запись только сохранённых вызываемым кодом значений регистров.
+        "sw s0,  1  * 4(sp)\n"
+        "sw s1,  2  * 4(sp)\n"
+        "sw s2,  3  * 4(sp)\n"
+        "sw s3,  4  * 4(sp)\n"
+        "sw s4,  5  * 4(sp)\n"
+        "sw s5,  6  * 4(sp)\n"
+        "sw s6,  7  * 4(sp)\n"
+        "sw s7,  8  * 4(sp)\n"
+        "sw s8,  9  * 4(sp)\n"
+        "sw s9,  10 * 4(sp)\n"
+        "sw s10, 11 * 4(sp)\n"
+        "sw s11, 12 * 4(sp)\n"
+
+        // Переключение указателя стека.
+        "sw sp, (a0)\n" // *prev_sp = sp;
+        "lw sp, (a1)\n" // Переключение указателя стека (sp) сюда.
+
+        // Восстановление сохранённых вызываемым кодом значений регистров из стека следующего процесса.
+        "lw ra,  0  * 4(sp)\n" // Восстановление только сохранённых вызываемым кодом значений регистров.
+        "lw s0,  1  * 4(sp)\n"
+        "lw s1,  2  * 4(sp)\n"
+        "lw s2,  3  * 4(sp)\n"
+        "lw s3,  4  * 4(sp)\n"
+        "lw s4,  5  * 4(sp)\n"
+        "lw s5,  6  * 4(sp)\n"
+        "lw s6,  7  * 4(sp)\n"
+        "lw s7,  8  * 4(sp)\n"
+        "lw s8,  9  * 4(sp)\n"
+        "lw s9,  10 * 4(sp)\n"
+        "lw s10, 11 * 4(sp)\n"
+        "lw s11, 12 * 4(sp)\n"
+        "addi sp, sp, 13 * 4\n" // Извлекли из стека 13 4-байтовых регистров.
+        "ret\n");
+}
+
+void delay(void)
+{
+    for (int i = 0; i < 30000000; i++)
+        __asm__ __volatile__("nop"); // do nothing
+}
+
+void proc_a_entry(void)
+{
+    printf("starting process A\n");
+    while (1)
+    {
+        putchar('A');
+        switch_context(&proc_a->sp, &proc_b->sp);
+        delay();
+    }
+}
+
+void proc_b_entry(void)
+{
+    printf("starting process B\n");
+    while (1)
+    {
+        putchar('B');
+        switch_context(&proc_b->sp, &proc_a->sp);
+        delay();
+    }
 }
 
 __attribute__((naked)) __attribute__((aligned(4))) void kernel_entry(void)
@@ -91,7 +193,7 @@ __attribute__((naked)) __attribute__((aligned(4))) void kernel_entry(void)
                          "sret\n");
 }
 
-void handle_trap(struct trap_frame* /* f */)
+void handle_trap(struct trap_frame* f)
 {
     uint32_t scause = READ_CSR(scause);
     uint32_t stval = READ_CSR(stval);
@@ -104,15 +206,14 @@ void kernel_main(void)
 {
     memset(__bss, 0, (size_t)__bss_end - (size_t)__bss);
 
-    paddr_t paddr0 = alloc_pages(2);
-    paddr_t paddr1 = alloc_pages(1);
-    printf("alloc_pages test: paddr0=%x\n", paddr0);
-    printf("alloc_pages test: paddr1=%x\n", paddr1);
-
     WRITE_CSR(stvec, (uint32_t)kernel_entry);
-    __asm__ __volatile__("unimp");
-}
 
+    proc_a = create_process((uint32_t)proc_a_entry);
+    proc_b = create_process((uint32_t)proc_b_entry);
+    proc_a_entry();
+
+    PANIC("unreachable here!");
+}
 __attribute__((section(".text.boot"))) __attribute__((naked)) void boot(void)
 {
     __asm__ __volatile__("mv sp, %[stack_top]\n" // Устанавливаем указатель стека
