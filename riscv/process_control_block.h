@@ -10,9 +10,10 @@
 
 struct process
 {
-    int pid;             // ID процесса.
-    int state;           // Состояние процесса: PROC_UNUSED или PROC_RUNNABLE
-    vaddr_t sp;          // Указатель стека.
+    int pid;    // ID процесса.
+    int state;  // Состояние процесса: PROC_UNUSED или PROC_RUNNABLE
+    vaddr_t sp; // Указатель стека.
+    uint32_t* page_table;
     uint8_t stack[8192]; // Стек ядра.
 };
 

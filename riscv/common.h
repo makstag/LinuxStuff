@@ -1,7 +1,7 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
-typedef int bool;
+// typedef int bool;
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
@@ -28,7 +28,7 @@ struct sbiret
     long value;
 };
 
-struct trap_frame 
+struct trap_frame
 {
     uint32_t ra;
     uint32_t gp;
