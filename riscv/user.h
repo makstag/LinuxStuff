@@ -4,6 +4,6 @@
 #include "common.h"
 
 __attribute__((noreturn)) void exit(void);
-// void putchar(char ch);
+void putchar(char ch);
 
 #endif /* __USER_H__ */

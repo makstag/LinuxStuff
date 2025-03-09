@@ -21,6 +21,7 @@ typedef uint32_t vaddr_t;
 #define va_end __builtin_va_end
 #define va_arg __builtin_va_arg
 #define PAGE_SIZE 4096
+#define SYS_PUTCHAR 1
 
 struct sbiret
 {
@@ -68,8 +69,5 @@ void* memcpy(void* dst, const void* src, size_t n);
 char* strcpy(char* dst, const char* src);
 int strcmp(const char* s1, const char* s2);
 void printf(const char* fmt, ...);
-
-// struct sbiret sbi_call(long arg0, long arg1, long arg2, long arg3, long arg4, long arg5, long fid, long eid);
-void putchar(char ch);
 
 #endif /* __COMMON_H__ */

@@ -7,7 +7,7 @@
 #define USER_BASE 0x1000000
 
 #define SSTATUS_SPIE (1 << 5)
-
+#define SCAUSE_ECALL 8
 #define SATP_SV32 (1u << 31)
 #define PAGE_V (1 << 0) // бит "Valid" (запись активна)
 #define PAGE_R (1 << 1) // Доступна для чтения
