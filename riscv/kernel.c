@@ -35,6 +35,12 @@ void putchar(char ch)
     sbi_call(ch, 0, 0, 0, 0, 0, 0, 1 /* Console Putchar */);
 }
 
+long getchar(void)
+{
+    struct sbiret ret = sbi_call(0, 0, 0, 0, 0, 0, 0, 2);
+    return ret.error;
+}
+
 // ↓ __attribute__((naked)) очень важен!
 __attribute__((naked)) void user_entry(void)
 {
@@ -335,6 +341,24 @@ void handle_syscall(struct trap_frame* f)
 {
     switch (f->a3)
     {
+    case SYS_EXIT:
+        printf("process %d exited\n", current_proc->pid);
+        current_proc->state = PROC_EXITED;
+        yield();
+        PANIC("unreachable");
+    case SYS_GETCHAR:
+        while (1)
+        {
+            long ch = getchar();
+            if (ch >= 0)
+            {
+                f->a0 = ch;
+                break;
+            }
+
+            yield();
+        }
+        break;
     case SYS_PUTCHAR:
         putchar(f->a0);
         break;

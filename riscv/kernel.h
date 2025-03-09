@@ -5,7 +5,7 @@
 
 // Базовый виртуальный адрес образа приложения. Должен соответствовать стартовому адресу, определённому в `user.ld`.
 #define USER_BASE 0x1000000
-
+#define PROC_EXITED 2
 #define SSTATUS_SPIE (1 << 5)
 #define SCAUSE_ECALL 8
 #define SATP_SV32 (1u << 31)
